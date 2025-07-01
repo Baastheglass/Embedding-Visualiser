@@ -314,6 +314,7 @@ const EmbeddingVisualizer = () => {
           flex-direction: column;
           gap: 8px;
           flex-shrink: 0;
+          width: 100%;
         }
 
         .sentence-input textarea {
@@ -380,6 +381,8 @@ const EmbeddingVisualizer = () => {
           transition: all 0.2s;
           white-space: nowrap;
           height: fit-content;
+          min-width: 140px;
+          box-sizing: border-box;
         }
 
         .primary-btn:hover:not(:disabled) {
@@ -395,8 +398,6 @@ const EmbeddingVisualizer = () => {
           box-shadow: none;
         }
 
-
-
         .clear-btn {
           padding: 8px 16px;
           background: #f8fafc;
@@ -407,6 +408,8 @@ const EmbeddingVisualizer = () => {
           font-size: 13px;
           font-weight: 500;
           transition: all 0.2s;
+          min-width: 140px;
+          box-sizing: border-box;
         }
 
         .clear-btn:hover:not(:disabled) {
