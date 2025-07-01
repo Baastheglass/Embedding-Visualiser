@@ -6,7 +6,7 @@ import D3ScatterPlot from './D3ScatterPlot';
 
 const EmbeddingVisualizer = () => {
   const [sentences, setSentences] = useState([]);
-  const [newSentence, setNewSentence] = useState('');
+  const [inputText, setInputText] = useState(''); // Changed to handle multiple sentences
   const [isLoading, setIsLoading] = useState(false);
   const [visibleSentences, setVisibleSentences] = useState(new Set());
   const [error, setError] = useState('');
@@ -25,11 +25,13 @@ const EmbeddingVisualizer = () => {
     "Cats are adorable pets"
   ];
 
-  // Function to generate embeddings using the real backend API
-  const generateEmbedding = async (text) => {
+  // Function to generate embeddings for multiple sentences using existing endpoint
+  const generateBatchEmbeddings = async (sentencesArray) => {
     try {
+      // Send all sentences as a single text string, separated by newlines
+      
       const response = await axios.post('http://localhost:8000/getEmbeddings', {
-        text: text
+        text: sentencesArray
       }, {
         headers: {
           'Content-Type': 'application/json',
@@ -39,26 +41,25 @@ const EmbeddingVisualizer = () => {
       console.log('Backend response:', response.data);
       
       // The backend returns all embeddings and sentences
-      // We need to find the coordinates for the current text
-      const { embeddings, sentences } = response.data;
+      const { embeddings, sentences: returnedSentences } = response.data;
       
-      // Find the index of the current text in the sentences array
-      const textIndex = sentences.findIndex(sentence => sentence === text);
-      
-      if (textIndex !== -1 && embeddings[textIndex]) {
-        return {
-          x: embeddings[textIndex][0],
-          y: embeddings[textIndex][1]
-        };
-      } else {
-        throw new Error('Could not find embedding for the provided text');
+      if (!embeddings || !returnedSentences) {
+        throw new Error('Invalid response format from backend');
       }
+      
+      // Map each sentence to its embedding
+      return returnedSentences.map((sentence, index) => ({
+        text: sentence.trim(),
+        embedding: {
+          x: embeddings[index][0],
+          y: embeddings[index][1]
+        }
+      }));
       
     } catch (error) {
       console.error('API Error:', error);
       
       if (error.response) {
-        // The request was made and the server responded with a status code
         const statusCode = error.response.status;
         const errorMessage = error.response.data?.detail || error.response.data?.message || 'Unknown error';
         
@@ -70,82 +71,78 @@ const EmbeddingVisualizer = () => {
           throw new Error(`HTTP ${statusCode}: ${errorMessage}`);
         }
       } else if (error.request) {
-        // The request was made but no response was received
         throw new Error('Cannot connect to the backend server. Make sure it\'s running on http://localhost:8000');
       } else {
-        // Something happened in setting up the request
         throw new Error(`Request error: ${error.message}`);
       }
     }
   };
 
-  // Function to add a new sentence
-  const addSentence = useCallback(async () => {
-    if (!newSentence.trim()) return;
+  // Function to process and add multiple sentences
+  const processSentences = useCallback(async () => {
+    if (!inputText.trim()) return;
+    
+    // Parse input text into individual sentences
+    const inputSentences = inputText
+      .split('\n')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+    
+    if (inputSentences.length === 0) return;
     
     setIsLoading(true);
     setError('');
     
     try {
-      const embedding = await generateEmbedding(newSentence);
-      const newSentenceObj = {
-        id: Date.now(),
-        text: newSentence.trim(),
-        embedding,
-        visible: true
-      };
+      // Send all sentences as batch to backend using existing endpoint
+      const embeddingResults = await generateBatchEmbeddings(inputSentences);
       
-      setSentences(prev => [...prev, newSentenceObj]);
-      setVisibleSentences(prev => new Set([...prev, newSentenceObj.id]));
-      setNewSentence('');
+      // Create sentence objects with unique IDs
+      const newSentenceObjs = embeddingResults.map((result, index) => ({
+        id: Date.now() + index,
+        text: result.text,
+        embedding: result.embedding,
+        visible: true
+      }));
+      
+      // Update state with all new sentences
+      setSentences(prev => [...prev, ...newSentenceObjs]);
+      setVisibleSentences(prev => {
+        const newSet = new Set(prev);
+        newSentenceObjs.forEach(s => newSet.add(s.id));
+        return newSet;
+      });
+      setInputText('');
+      
     } catch (err) {
-      setError(`Failed to generate embedding: ${err.message}`);
+      setError(`Failed to generate embeddings: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
-  }, [newSentence]);
+  }, [inputText]);
 
-  // Function to add sample sentences
+  // Function to add sample sentences as batch
   const addSampleSentences = useCallback(async () => {
     setIsLoading(true);
     setError('');
     
     try {
-      const newSentences = [];
+      // Send all sample sentences as batch using existing endpoint
+      const embeddingResults = await generateBatchEmbeddings(sampleSentences);
       
-      // Add sentences one by one to get real embeddings from backend
-      for (const sentence of sampleSentences) {
-        try {
-          const embedding = await generateEmbedding(sentence);
-          newSentences.push({
-            id: Date.now() + Math.random(),
-            text: sentence,
-            embedding,
-            visible: true
-          });
-          
-          // Small delay between requests to avoid overwhelming the API
-          await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (err) {
-          console.warn(`Failed to get embedding for: "${sentence}". Error: ${err.message}`);
-          // Continue with other sentences even if one fails
-        }
-      }
+      const newSentenceObjs = embeddingResults.map((result, index) => ({
+        id: Date.now() + index + Math.random(),
+        text: result.text,
+        embedding: result.embedding,
+        visible: true
+      }));
       
-      if (newSentences.length === 0) {
-        throw new Error('Failed to generate embeddings for any sample sentences');
-      }
-      
-      setSentences(prev => [...prev, ...newSentences]);
+      setSentences(prev => [...prev, ...newSentenceObjs]);
       setVisibleSentences(prev => {
         const newSet = new Set(prev);
-        newSentences.forEach(s => newSet.add(s.id));
+        newSentenceObjs.forEach(s => newSet.add(s.id));
         return newSet;
       });
-      
-      if (newSentences.length < sampleSentences.length) {
-        setError(`Successfully added ${newSentences.length} out of ${sampleSentences.length} sample sentences`);
-      }
       
     } catch (err) {
       setError(`Failed to generate embeddings: ${err.message}`);
@@ -163,6 +160,16 @@ const EmbeddingVisualizer = () => {
       } else {
         newSet.add(id);
       }
+      return newSet;
+    });
+  }, []);
+
+  // Function to remove a sentence
+  const removeSentence = useCallback((id) => {
+    setSentences(prev => prev.filter(s => s.id !== id));
+    setVisibleSentences(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(id);
       return newSet;
     });
   }, []);
@@ -186,36 +193,6 @@ const EmbeddingVisualizer = () => {
     }
   }, []);
 
-  
-  // Function to remove a sentence (simplified approach)
-  const removeSentence = useCallback(async (id) => {
-    try {
-      // Get the sentence text that we're removing
-      const sentenceToRemove = sentences.find(s => s.id === id);
-      if (!sentenceToRemove) return;
-      
-      // Remove from local state first
-      const updatedSentences = sentences.filter(s => s.id !== id);
-      setSentences(updatedSentences);
-      setVisibleSentences(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(id);
-        return newSet;
-      });
-      
-      // If no sentences left, just clear the backend
-      if (updatedSentences.length === 0) {
-        await axios.post('http://localhost:8000/deleteContents');
-        return;
-      }
-      
-      
-    } catch (err) {
-      console.error('Failed to remove sentence from backend:', err);
-      setError('Failed to sync with backend');
-    }
-  }, [sentences]);
-
   // Update plot data when sentences or visibility changes
   const visibleSentenceData = sentences.filter(s => visibleSentences.has(s.id));
 
@@ -223,7 +200,7 @@ const EmbeddingVisualizer = () => {
     <div className="embedding-visualizer">
       <div className="header">
         <h1>Embedding Visualizer</h1>
-        <p>Add sentences to see how they cluster in 2D embedding space</p>
+        <p>Add multiple sentences (one per line) to see how they cluster in 2D embedding space</p>
       </div>
 
       {error && (
@@ -234,20 +211,19 @@ const EmbeddingVisualizer = () => {
 
       <div className="input-section">
         <div className="sentence-input">
-          <input
-            type="text"
-            value={newSentence}
-            onChange={(e) => setNewSentence(e.target.value)}
-            placeholder="Enter a sentence to visualize..."
-            onKeyPress={(e) => e.key === 'Enter' && addSentence()}
+          <textarea
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder="Enter sentences to visualize (one per line)...&#10;Example:&#10;I love programming&#10;Machine learning is fascinating&#10;The weather is nice today"
             disabled={isLoading}
+            rows={4}
           />
           <button 
-            onClick={addSentence} 
-            disabled={isLoading || !newSentence.trim()}
+            onClick={processSentences} 
+            disabled={isLoading || !inputText.trim()}
             className="primary-btn"
           >
-            {isLoading ? 'Adding...' : 'Add'}
+            {isLoading ? 'Processing...' : 'Process Sentences'}
           </button>
         </div>
         
@@ -378,6 +354,35 @@ const EmbeddingVisualizer = () => {
           display: flex;
           gap: 12px;
           margin-bottom: 16px;
+          align-items: flex-start;
+        }
+
+        .sentence-input textarea {
+          flex: 1;
+          padding: 12px 16px;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          font-size: 14px;
+          background: #fafbff;
+          color: #1e293b;
+          transition: all 0.2s;
+          resize: vertical;
+          min-height: 100px;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          line-height: 1.5;
+        }
+
+        .sentence-input textarea::placeholder {
+          color: #94a3b8;
+          line-height: 1.5;
+        }
+
+        .sentence-input textarea:focus {
+          outline: none;
+          border-color: #6366f1;
+          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+          background: white;
+          color: #0f172a;
         }
 
         .sentence-input input {
@@ -414,6 +419,7 @@ const EmbeddingVisualizer = () => {
           font-weight: 500;
           transition: all 0.2s;
           white-space: nowrap;
+          height: fit-content;
         }
 
         .primary-btn:hover:not(:disabled) {
@@ -672,6 +678,17 @@ const EmbeddingVisualizer = () => {
             gap: 12px;
           }
 
+          .sentence-input textarea {
+            font-size: 14px;
+            padding: 12px 16px;
+            min-height: 80px;
+          }
+
+          .primary-btn {
+            width: 100%;
+            text-align: center;
+          }
+
           .action-buttons {
             flex-direction: column;
             gap: 8px;
@@ -731,13 +748,21 @@ const EmbeddingVisualizer = () => {
             color: #1e293b;
           }
 
-          .sentence-input input:focus {
+          .sentence-input textarea {
+            padding: 10px 14px;
+            font-size: 16px; /* Prevent zoom on iOS */
+            color: #1e293b;
+            min-height: 80px;
+          }
+
+          .sentence-input input:focus, .sentence-input textarea:focus {
             color: #0f172a;
           }
 
           .primary-btn {
             padding: 10px 16px;
             font-size: 14px;
+            width: 100%;
           }
 
           .secondary-btn, .clear-btn {

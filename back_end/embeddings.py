@@ -11,14 +11,9 @@ def pca_reduction(embeddings):
     reduced_embeddings = reducer.fit_transform(embeddings)
     return reduced_embeddings
     
-def get_embeddings(input_sentence):
-    with open('sentences.txt', 'a') as file:
-            file.write(input_sentence + '\n')
+def get_embeddings(sentences):
     load_dotenv()
     openai.api_key = os.getenv('OPENAI_API_KEY') # Replace with your actual key
-    with open('sentences.txt', 'r') as file:
-        sentences = file.read().splitlines()
-
     embeddings = []
     for sentence in sentences:
         response = openai.embeddings.create(
