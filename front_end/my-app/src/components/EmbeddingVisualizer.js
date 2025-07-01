@@ -162,7 +162,7 @@ const EmbeddingVisualizer = () => {
       },
       textposition: 'top center',
       textfont: {
-        size: 10,
+        size: window.innerWidth <= 480 ? 8 : window.innerWidth <= 768 ? 9 : 10,
         color: 'black'
       },
       hovertemplate: '<b>%{text}</b><br>X: %{x:.2f}<br>Y: %{y:.2f}<extra></extra>',
@@ -172,26 +172,34 @@ const EmbeddingVisualizer = () => {
     setPlotData([plotTrace]);
   }, [sentences, visibleSentences]);
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+  
   const plotLayout = {
     title: {
       text: 'Sentence Embeddings Visualization',
-      font: { size: 20 }
+      font: { size: isMobile ? 16 : 20 }
     },
     xaxis: {
       title: 'Embedding Dimension 1',
       gridcolor: '#e0e0e0',
-      zerolinecolor: '#d0d0d0'
+      zerolinecolor: '#d0d0d0',
+      titlefont: { size: isMobile ? 12 : 14 },
+      tickfont: { size: isMobile ? 10 : 12 }
     },
     yaxis: {
       title: 'Embedding Dimension 2',
       gridcolor: '#e0e0e0',
-      zerolinecolor: '#d0d0d0'
+      zerolinecolor: '#d0d0d0',
+      titlefont: { size: isMobile ? 12 : 14 },
+      tickfont: { size: isMobile ? 10 : 12 }
     },
     plot_bgcolor: '#fafafa',
     paper_bgcolor: 'white',
     hovermode: 'closest',
     autosize: true,
-    margin: { t: 50, b: 50, l: 50, r: 50 }
+    margin: isMobile 
+      ? { t: 40, b: 40, l: 40, r: 40 }
+      : { t: 50, b: 50, l: 50, r: 50 }
   };
 
   const plotConfig = {
@@ -264,7 +272,11 @@ const EmbeddingVisualizer = () => {
               data={plotData}
               layout={plotLayout}
               config={plotConfig}
-              style={{ width: '100%', height: '600px' }}
+              style={{ 
+                width: '100%', 
+                height: window.innerWidth <= 480 ? '300px' : window.innerWidth <= 768 ? '400px' : '600px' 
+              }}
+              useResizeHandler={true}
             />
           ) : (
             <div className="empty-plot">
@@ -431,6 +443,190 @@ const EmbeddingVisualizer = () => {
         @media (max-width: 1024px) {
           .main-content {
             grid-template-columns: 1fr;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .embedding-visualizer {
+            padding: 15px;
+          }
+
+          .input-section {
+            padding: 15px;
+          }
+
+          .sentence-input {
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .sentence-input input {
+            font-size: 16px;
+            padding: 14px;
+          }
+
+          .sentence-input button {
+            font-size: 16px;
+            padding: 14px 20px;
+          }
+
+          .action-buttons {
+            flex-direction: column;
+            gap: 8px;
+          }
+
+          .sample-btn, .clear-btn {
+            width: 100%;
+            padding: 12px 16px;
+          }
+
+          .plot-container {
+            margin-bottom: 20px;
+          }
+
+          .empty-plot {
+            height: 400px;
+            font-size: 16px;
+          }
+
+          .sentence-list {
+            padding: 15px;
+          }
+
+          .sentence-items {
+            max-height: 300px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .embedding-visualizer {
+            padding: 10px;
+          }
+
+          .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+          }
+
+          .header p {
+            font-size: 14px;
+          }
+
+          .input-section {
+            padding: 12px;
+          }
+
+          .sentence-input input {
+            font-size: 16px;
+            padding: 12px;
+          }
+
+          .sentence-input button {
+            font-size: 14px;
+            padding: 12px 16px;
+          }
+
+          .sample-btn, .clear-btn {
+            font-size: 14px;
+            padding: 10px 14px;
+          }
+
+          .empty-plot {
+            height: 300px;
+            font-size: 14px;
+            padding: 20px;
+            text-align: center;
+          }
+
+          .sentence-list {
+            padding: 12px;
+          }
+
+          .sentence-list h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+          }
+
+          .sentence-items {
+            max-height: 250px;
+          }
+
+          .sentence-item {
+            padding: 10px;
+            margin-bottom: 6px;
+          }
+
+          .sentence-text {
+            font-size: 13px;
+          }
+
+          .sentence-coords {
+            font-size: 11px;
+          }
+        }
+
+        @media (max-width: 320px) {
+          .embedding-visualizer {
+            padding: 8px;
+          }
+
+          .header h1 {
+            font-size: 20px;
+          }
+
+          .header p {
+            font-size: 13px;
+          }
+
+          .input-section {
+            padding: 10px;
+          }
+
+          .sentence-input input {
+            padding: 10px;
+            font-size: 16px;
+          }
+
+          .sentence-input button {
+            font-size: 13px;
+            padding: 10px 14px;
+          }
+
+          .sample-btn, .clear-btn {
+            font-size: 13px;
+            padding: 8px 12px;
+          }
+
+          .empty-plot {
+            height: 250px;
+            font-size: 13px;
+            padding: 15px;
+          }
+
+          .sentence-list {
+            padding: 10px;
+          }
+
+          .sentence-items {
+            max-height: 200px;
+          }
+
+          .sentence-item {
+            padding: 8px;
+            margin-bottom: 4px;
+          }
+
+          .sentence-text {
+            font-size: 12px;
+            line-height: 1.3;
+          }
+
+          .sentence-coords {
+            font-size: 10px;
+          }
+
+          .sentence-controls {
+            margin-right: 8px;
           }
         }
 
