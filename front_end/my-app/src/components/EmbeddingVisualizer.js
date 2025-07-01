@@ -345,7 +345,7 @@ const EmbeddingVisualizer = () => {
           background: white;
           padding: 24px;
           border-radius: 12px;
-          margin-bottom: 24px;
+          margin-bottom: 28px;
           border: 1px solid #e2e8f0;
           box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
         }
@@ -353,7 +353,7 @@ const EmbeddingVisualizer = () => {
         .sentence-input {
           display: flex;
           gap: 12px;
-          margin-bottom: 16px;
+          margin-bottom: 20px;
           align-items: flex-start;
         }
 
@@ -438,6 +438,7 @@ const EmbeddingVisualizer = () => {
         .action-buttons {
           display: flex;
           gap: 8px;
+          margin-top: 4px;
         }
 
         .secondary-btn {
@@ -669,13 +670,19 @@ const EmbeddingVisualizer = () => {
             padding: 16px;
           }
 
+          .header {
+            margin-bottom: 28px;
+          }
+
           .input-section {
             padding: 20px;
+            margin-bottom: 28px;
           }
 
           .sentence-input {
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
+            margin-bottom: 20px;
           }
 
           .sentence-input textarea {
@@ -691,7 +698,8 @@ const EmbeddingVisualizer = () => {
 
           .action-buttons {
             flex-direction: column;
-            gap: 8px;
+            gap: 12px;
+            margin-top: 8px;
           }
 
           .secondary-btn, .clear-btn {
@@ -727,11 +735,16 @@ const EmbeddingVisualizer = () => {
 
         @media (max-width: 480px) {
           .embedding-visualizer {
-            padding: 12px;
+            padding: 16px;
+          }
+
+          .header {
+            margin-bottom: 32px;
           }
 
           .header h1 {
             font-size: 24px;
+            margin-bottom: 12px;
           }
 
           .header p {
@@ -739,11 +752,13 @@ const EmbeddingVisualizer = () => {
           }
 
           .input-section {
-            padding: 16px;
+            padding: 20px;
+            margin-bottom: 32px;
           }
 
           .sentence-input {
-            gap: 16px;
+            gap: 20px;
+            margin-bottom: 24px;
           }
 
           .sentence-input input {
@@ -753,10 +768,10 @@ const EmbeddingVisualizer = () => {
           }
 
           .sentence-input textarea {
-            padding: 12px 16px;
+            padding: 16px 20px;
             font-size: 16px; /* Prevent zoom on iOS */
             color: #1e293b;
-            min-height: 120px;
+            min-height: 140px;
             border-radius: 8px;
           }
 
@@ -765,16 +780,27 @@ const EmbeddingVisualizer = () => {
           }
 
           .primary-btn {
-            padding: 12px 16px;
-            font-size: 14px;
+            padding: 16px 20px;
+            font-size: 16px;
             width: 100%;
-            min-height: 44px; /* Better touch target */
+            min-height: 48px; /* Better touch target */
+            margin-bottom: 4px;
+          }
+
+          .action-buttons {
+            gap: 16px;
+            margin-top: 12px;
           }
 
           .secondary-btn, .clear-btn {
-            padding: 10px 14px;
-            font-size: 13px;
-            min-height: 40px;
+            padding: 14px 18px;
+            font-size: 14px;
+            min-height: 48px;
+          }
+
+          .main-content {
+            gap: 28px;
+            margin-top: 8px;
           }
 
           .empty-plot {
@@ -810,30 +836,59 @@ const EmbeddingVisualizer = () => {
 
         @media (max-width: 360px) {
           .embedding-visualizer {
-            padding: 8px;
-          }
-
-          .input-section {
             padding: 12px;
           }
 
+          .header {
+            margin-bottom: 28px;
+          }
+
+          .header h1 {
+            font-size: 22px;
+            margin-bottom: 10px;
+          }
+
+          .input-section {
+            padding: 16px;
+            margin-bottom: 28px;
+          }
+
+          .sentence-input {
+            margin-bottom: 20px;
+          }
+
           .sentence-input textarea {
-            padding: 10px 12px;
+            padding: 14px 16px;
             font-size: 16px;
-            min-height: 100px;
+            min-height: 120px;
             border-radius: 6px;
           }
 
           .primary-btn {
-            padding: 10px 14px;
-            font-size: 13px;
-            min-height: 40px;
+            padding: 14px 16px;
+            font-size: 15px;
+            min-height: 44px;
+            margin-bottom: 4px;
+          }
+
+          .action-buttons {
+            gap: 12px;
+            margin-top: 8px;
           }
 
           .secondary-btn, .clear-btn {
-            padding: 8px 12px;
-            font-size: 12px;
-            min-height: 36px;
+            padding: 12px 16px;
+            font-size: 13px;
+            min-height: 44px;
+          }
+
+          .main-content {
+            gap: 24px;
+            margin-top: 4px;
+          }
+
+          .plot-container {
+            margin-bottom: 4px;
           }
         }
       `}</style>
