@@ -1,17 +1,13 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import axios from 'axios';
-
-// Dynamically import Plot to avoid SSR issues
-const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
+import D3ScatterPlot from './D3ScatterPlot';
 
 const EmbeddingVisualizer = () => {
   const [sentences, setSentences] = useState([]);
   const [newSentence, setNewSentence] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [plotData, setPlotData] = useState([]);
   const [visibleSentences, setVisibleSentences] = useState(new Set());
   const [error, setError] = useState('');
 
@@ -136,85 +132,7 @@ const EmbeddingVisualizer = () => {
   }, []);
 
   // Update plot data when sentences or visibility changes
-  useEffect(() => {
-    const visibleSentenceData = sentences.filter(s => visibleSentences.has(s.id));
-    
-    if (visibleSentenceData.length === 0) {
-      setPlotData([]);
-      return;
-    }
-
-    const plotTrace = {
-      x: visibleSentenceData.map(s => s.embedding.x),
-      y: visibleSentenceData.map(s => s.embedding.y),
-      text: visibleSentenceData.map(s => s.text),
-      mode: 'markers+text',
-      type: 'scatter',
-      marker: {
-        size: 12,
-        color: visibleSentenceData.map((_, i) => i),
-        colorscale: 'Viridis',
-        opacity: 0.8,
-        line: {
-          color: 'white',
-          width: 2
-        }
-      },
-      textposition: 'top center',
-      textfont: {
-        size: window.innerWidth <= 480 ? 8 : window.innerWidth <= 768 ? 9 : 10,
-        color: 'black'
-      },
-      hovertemplate: '<b>%{text}</b><br>X: %{x:.2f}<br>Y: %{y:.2f}<extra></extra>',
-      name: 'Sentences'
-    };
-
-    setPlotData([plotTrace]);
-  }, [sentences, visibleSentences]);
-
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
-  
-  const plotLayout = {
-    title: {
-      text: 'Sentence Embeddings Visualization',
-      font: { size: isMobile ? 16 : 20 }
-    },
-    xaxis: {
-      title: 'Embedding Dimension 1',
-      gridcolor: '#e0e0e0',
-      zerolinecolor: '#d0d0d0',
-      titlefont: { size: isMobile ? 12 : 14 },
-      tickfont: { size: isMobile ? 10 : 12 }
-    },
-    yaxis: {
-      title: 'Embedding Dimension 2',
-      gridcolor: '#e0e0e0',
-      zerolinecolor: '#d0d0d0',
-      titlefont: { size: isMobile ? 12 : 14 },
-      tickfont: { size: isMobile ? 10 : 12 }
-    },
-    plot_bgcolor: '#fafafa',
-    paper_bgcolor: 'white',
-    hovermode: 'closest',
-    autosize: true,
-    margin: isMobile 
-      ? { t: 40, b: 40, l: 40, r: 40 }
-      : { t: 50, b: 50, l: 50, r: 50 }
-  };
-
-  const plotConfig = {
-    responsive: true,
-    displayModeBar: true,
-    modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d'],
-    displaylogo: false,
-    toImageButtonOptions: {
-      format: 'png',
-      filename: 'embedding_visualization',
-      height: 500,
-      width: 800,
-      scale: 1
-    }
-  };
+  const visibleSentenceData = sentences.filter(s => visibleSentences.has(s.id));
 
   return (
     <div className="embedding-visualizer">
@@ -242,8 +160,9 @@ const EmbeddingVisualizer = () => {
           <button 
             onClick={addSentence} 
             disabled={isLoading || !newSentence.trim()}
+            className="primary-btn"
           >
-            {isLoading ? 'Adding...' : 'Add Sentence'}
+            {isLoading ? 'Adding...' : 'Add'}
           </button>
         </div>
         
@@ -251,9 +170,9 @@ const EmbeddingVisualizer = () => {
           <button 
             onClick={addSampleSentences} 
             disabled={isLoading}
-            className="sample-btn"
+            className="secondary-btn"
           >
-            Add Sample Sentences
+            Add Samples
           </button>
           <button 
             onClick={clearAllSentences} 
@@ -267,26 +186,26 @@ const EmbeddingVisualizer = () => {
 
       <div className="main-content">
         <div className="plot-container">
-          {plotData.length > 0 ? (
-            <Plot
-              data={plotData}
-              layout={plotLayout}
-              config={plotConfig}
-              style={{ 
-                width: '100%', 
-                height: window.innerWidth <= 480 ? '300px' : window.innerWidth <= 768 ? '400px' : '600px' 
-              }}
-              useResizeHandler={true}
+          {visibleSentenceData.length > 0 ? (
+            <D3ScatterPlot
+              data={visibleSentenceData}
+              width={typeof window !== 'undefined' && window.innerWidth <= 480 ? 350 : 
+                     typeof window !== 'undefined' && window.innerWidth <= 768 ? 600 : 800}
+              height={typeof window !== 'undefined' && window.innerWidth <= 480 ? 300 : 
+                      typeof window !== 'undefined' && window.innerWidth <= 768 ? 400 : 500}
+              onPointHover={(point) => console.log('Hovered:', point.text)}
+              onPointClick={(point) => console.log('Clicked:', point.text)}
             />
           ) : (
             <div className="empty-plot">
+              <div className="empty-icon">📊</div>
               <p>Add sentences to see the visualization</p>
             </div>
           )}
         </div>
 
         <div className="sentence-list">
-          <h3>Sentences ({sentences.length})</h3>
+          <h3>Sentences <span className="count">({sentences.length})</span></h3>
           <div className="sentence-items">
             {sentences.map((sentence) => (
               <div key={sentence.id} className="sentence-item">
@@ -307,11 +226,13 @@ const EmbeddingVisualizer = () => {
                     ×
                   </button>
                 </div>
-                <div className="sentence-text">
-                  {sentence.text}
-                </div>
-                <div className="sentence-coords">
-                  ({sentence.embedding.x.toFixed(2)}, {sentence.embedding.y.toFixed(2)})
+                <div className="sentence-content">
+                  <div className="sentence-text">
+                    {sentence.text}
+                  </div>
+                  <div className="sentence-coords">
+                    ({sentence.embedding.x.toFixed(2)}, {sentence.embedding.y.toFixed(2)})
+                  </div>
                 </div>
               </div>
             ))}
@@ -324,120 +245,148 @@ const EmbeddingVisualizer = () => {
           max-width: 1400px;
           margin: 0 auto;
           padding: 20px;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          background: #fafbff;
+          min-height: 100vh;
         }
 
         .header {
           text-align: center;
-          margin-bottom: 30px;
+          margin-bottom: 32px;
         }
 
         .header h1 {
-          color: #333;
-          margin-bottom: 10px;
+          color: #1e293b;
+          margin: 0 0 8px 0;
+          font-size: 28px;
+          font-weight: 600;
+          letter-spacing: -0.025em;
         }
 
         .header p {
-          color: #666;
+          color: #64748b;
           font-size: 16px;
+          margin: 0;
         }
 
         .error-message {
-          background: #fee;
-          color: #d00;
-          padding: 10px;
-          border-radius: 4px;
+          background: #fef2f2;
+          color: #dc2626;
+          padding: 12px 16px;
+          border-radius: 8px;
           margin-bottom: 20px;
           text-align: center;
+          border: 1px solid #fecaca;
+          font-size: 14px;
         }
 
         .input-section {
-          background: #f8f9fa;
-          padding: 20px;
-          border-radius: 8px;
-          margin-bottom: 20px;
+          background: white;
+          padding: 24px;
+          border-radius: 12px;
+          margin-bottom: 24px;
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
         }
 
         .sentence-input {
           display: flex;
-          gap: 10px;
-          margin-bottom: 15px;
+          gap: 12px;
+          margin-bottom: 16px;
         }
 
         .sentence-input input {
           flex: 1;
-          padding: 12px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          font-size: 16px;
+          padding: 12px 16px;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          font-size: 14px;
+          background: #fafbff;
+          transition: all 0.2s;
         }
 
         .sentence-input input:focus {
           outline: none;
-          border-color: #007bff;
-          box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+          border-color: #6366f1;
+          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+          background: white;
         }
 
-        .sentence-input button {
+        .primary-btn {
           padding: 12px 20px;
-          background: #007bff;
+          background: #6366f1;
           color: white;
           border: none;
-          border-radius: 4px;
+          border-radius: 8px;
           cursor: pointer;
-          font-size: 16px;
+          font-size: 14px;
+          font-weight: 500;
+          transition: all 0.2s;
           white-space: nowrap;
         }
 
-        .sentence-input button:hover:not(:disabled) {
-          background: #0056b3;
+        .primary-btn:hover:not(:disabled) {
+          background: #5856eb;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
 
-        .sentence-input button:disabled {
-          background: #ccc;
+        .primary-btn:disabled {
+          background: #cbd5e1;
           cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
         }
 
         .action-buttons {
           display: flex;
-          gap: 10px;
+          gap: 8px;
         }
 
-        .sample-btn {
-          padding: 10px 16px;
-          background: #28a745;
-          color: white;
-          border: none;
-          border-radius: 4px;
+        .secondary-btn {
+          padding: 8px 16px;
+          background: #f8fafc;
+          color: #475569;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
           cursor: pointer;
+          font-size: 13px;
+          font-weight: 500;
+          transition: all 0.2s;
         }
 
-        .sample-btn:hover:not(:disabled) {
-          background: #218838;
+        .secondary-btn:hover:not(:disabled) {
+          background: #f1f5f9;
+          border-color: #cbd5e1;
         }
 
         .clear-btn {
-          padding: 10px 16px;
-          background: #dc3545;
-          color: white;
-          border: none;
-          border-radius: 4px;
+          padding: 8px 16px;
+          background: #f8fafc;
+          color: #64748b;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
           cursor: pointer;
+          font-size: 13px;
+          font-weight: 500;
+          transition: all 0.2s;
         }
 
         .clear-btn:hover:not(:disabled) {
-          background: #c82333;
+          background: #f1f5f9;
+          color: #475569;
         }
 
-        .clear-btn:disabled, .sample-btn:disabled {
-          background: #ccc;
+        .secondary-btn:disabled, .clear-btn:disabled {
+          background: #f8fafc;
+          color: #cbd5e1;
           cursor: not-allowed;
         }
 
         .main-content {
           display: grid;
-          grid-template-columns: 1fr 350px;
-          gap: 20px;
+          grid-template-columns: 1fr 320px;
+          gap: 24px;
         }
 
         @media (max-width: 1024px) {
@@ -446,28 +395,190 @@ const EmbeddingVisualizer = () => {
           }
         }
 
+        .plot-container {
+          background: white;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          overflow: hidden;
+          box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        .empty-plot {
+          height: 500px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          color: #64748b;
+          font-size: 16px;
+          background: #fafbff;
+        }
+
+        .empty-icon {
+          font-size: 48px;
+          margin-bottom: 16px;
+          opacity: 0.5;
+        }
+
+        .sentence-list {
+          background: white;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          padding: 20px;
+          box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+          height: fit-content;
+        }
+
+        .sentence-list h3 {
+          margin: 0 0 16px 0;
+          color: #1e293b;
+          font-size: 18px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .count {
+          color: #64748b;
+          font-weight: 400;
+          font-size: 14px;
+        }
+
+        .sentence-items {
+          max-height: 480px;
+          overflow-y: auto;
+        }
+
+        .sentence-items::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .sentence-items::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 3px;
+        }
+
+        .sentence-items::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 3px;
+        }
+
+        .sentence-items::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+
+        .sentence-item {
+          display: flex;
+          align-items: flex-start;
+          padding: 12px;
+          border: 1px solid #f1f5f9;
+          border-radius: 8px;
+          margin-bottom: 8px;
+          background: #fafbff;
+          transition: all 0.2s;
+        }
+
+        .sentence-item:hover {
+          border-color: #e2e8f0;
+          background: white;
+        }
+
+        .sentence-controls {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-right: 12px;
+          flex-shrink: 0;
+        }
+
+        .visibility-toggle {
+          position: relative;
+          cursor: pointer;
+        }
+
+        .visibility-toggle input[type="checkbox"] {
+          opacity: 0;
+          position: absolute;
+        }
+
+        .checkmark {
+          display: block;
+          width: 16px;
+          height: 16px;
+          background: white;
+          border: 2px solid #e2e8f0;
+          border-radius: 4px;
+          position: relative;
+          transition: all 0.2s;
+        }
+
+        .visibility-toggle input:checked + .checkmark {
+          background: #6366f1;
+          border-color: #6366f1;
+        }
+
+        .visibility-toggle input:checked + .checkmark::after {
+          content: '✓';
+          position: absolute;
+          top: -1px;
+          left: 1px;
+          color: white;
+          font-size: 10px;
+          font-weight: bold;
+        }
+
+        .remove-btn {
+          width: 16px;
+          height: 16px;
+          background: #f1f5f9;
+          color: #64748b;
+          border: none;
+          border-radius: 50%;
+          cursor: pointer;
+          font-size: 10px;
+          line-height: 1;
+          padding: 0;
+          transition: all 0.2s;
+        }
+
+        .remove-btn:hover {
+          background: #fef2f2;
+          color: #dc2626;
+        }
+
+        .sentence-content {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .sentence-text {
+          font-size: 14px;
+          line-height: 1.4;
+          margin-bottom: 4px;
+          color: #1e293b;
+          word-wrap: break-word;
+        }
+
+        .sentence-coords {
+          font-size: 11px;
+          color: #94a3b8;
+          font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+        }
+
+        /* Mobile responsive */
         @media (max-width: 768px) {
           .embedding-visualizer {
-            padding: 15px;
+            padding: 16px;
           }
 
           .input-section {
-            padding: 15px;
+            padding: 20px;
           }
 
           .sentence-input {
             flex-direction: column;
-            gap: 10px;
-          }
-
-          .sentence-input input {
-            font-size: 16px;
-            padding: 14px;
-          }
-
-          .sentence-input button {
-            font-size: 16px;
-            padding: 14px 20px;
+            gap: 12px;
           }
 
           .action-buttons {
@@ -475,9 +586,9 @@ const EmbeddingVisualizer = () => {
             gap: 8px;
           }
 
-          .sample-btn, .clear-btn {
+          .secondary-btn, .clear-btn {
             width: 100%;
-            padding: 12px 16px;
+            text-align: center;
           }
 
           .plot-container {
@@ -485,27 +596,34 @@ const EmbeddingVisualizer = () => {
           }
 
           .empty-plot {
-            height: 400px;
-            font-size: 16px;
+            height: 350px;
+            font-size: 14px;
+          }
+
+          .empty-icon {
+            font-size: 40px;
           }
 
           .sentence-list {
-            padding: 15px;
+            padding: 16px;
           }
 
           .sentence-items {
             max-height: 300px;
           }
+
+          .main-content {
+            gap: 16px;
+          }
         }
 
         @media (max-width: 480px) {
           .embedding-visualizer {
-            padding: 10px;
+            padding: 12px;
           }
 
           .header h1 {
             font-size: 24px;
-            margin-bottom: 8px;
           }
 
           .header p {
@@ -513,38 +631,35 @@ const EmbeddingVisualizer = () => {
           }
 
           .input-section {
-            padding: 12px;
+            padding: 16px;
           }
 
           .sentence-input input {
-            font-size: 16px;
-            padding: 12px;
-          }
-
-          .sentence-input button {
-            font-size: 14px;
-            padding: 12px 16px;
-          }
-
-          .sample-btn, .clear-btn {
-            font-size: 14px;
             padding: 10px 14px;
+            font-size: 16px; /* Prevent zoom on iOS */
+          }
+
+          .primary-btn {
+            padding: 10px 16px;
+            font-size: 14px;
+          }
+
+          .secondary-btn, .clear-btn {
+            padding: 8px 14px;
+            font-size: 13px;
           }
 
           .empty-plot {
-            height: 300px;
-            font-size: 14px;
-            padding: 20px;
-            text-align: center;
+            height: 280px;
+            font-size: 13px;
+          }
+
+          .empty-icon {
+            font-size: 36px;
           }
 
           .sentence-list {
-            padding: 12px;
-          }
-
-          .sentence-list h3 {
-            font-size: 16px;
-            margin-bottom: 12px;
+            padding: 14px;
           }
 
           .sentence-items {
@@ -561,189 +676,8 @@ const EmbeddingVisualizer = () => {
           }
 
           .sentence-coords {
-            font-size: 11px;
-          }
-        }
-
-        @media (max-width: 320px) {
-          .embedding-visualizer {
-            padding: 8px;
-          }
-
-          .header h1 {
-            font-size: 20px;
-          }
-
-          .header p {
-            font-size: 13px;
-          }
-
-          .input-section {
-            padding: 10px;
-          }
-
-          .sentence-input input {
-            padding: 10px;
-            font-size: 16px;
-          }
-
-          .sentence-input button {
-            font-size: 13px;
-            padding: 10px 14px;
-          }
-
-          .sample-btn, .clear-btn {
-            font-size: 13px;
-            padding: 8px 12px;
-          }
-
-          .empty-plot {
-            height: 250px;
-            font-size: 13px;
-            padding: 15px;
-          }
-
-          .sentence-list {
-            padding: 10px;
-          }
-
-          .sentence-items {
-            max-height: 200px;
-          }
-
-          .sentence-item {
-            padding: 8px;
-            margin-bottom: 4px;
-          }
-
-          .sentence-text {
-            font-size: 12px;
-            line-height: 1.3;
-          }
-
-          .sentence-coords {
             font-size: 10px;
           }
-
-          .sentence-controls {
-            margin-right: 8px;
-          }
-        }
-
-        .plot-container {
-          background: white;
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          overflow: hidden;
-        }
-
-        .empty-plot {
-          height: 600px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #666;
-          font-size: 18px;
-        }
-
-        .sentence-list {
-          background: white;
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          padding: 20px;
-        }
-
-        .sentence-list h3 {
-          margin-top: 0;
-          margin-bottom: 15px;
-          color: #333;
-        }
-
-        .sentence-items {
-          max-height: 520px;
-          overflow-y: auto;
-        }
-
-        .sentence-item {
-          display: flex;
-          align-items: flex-start;
-          padding: 12px;
-          border: 1px solid #eee;
-          border-radius: 4px;
-          margin-bottom: 8px;
-          background: #fafafa;
-        }
-
-        .sentence-controls {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          margin-right: 12px;
-        }
-
-        .visibility-toggle {
-          position: relative;
-          cursor: pointer;
-        }
-
-        .visibility-toggle input[type="checkbox"] {
-          opacity: 0;
-          position: absolute;
-        }
-
-        .checkmark {
-          display: block;
-          width: 18px;
-          height: 18px;
-          background: #fff;
-          border: 2px solid #ddd;
-          border-radius: 3px;
-          position: relative;
-        }
-
-        .visibility-toggle input:checked + .checkmark {
-          background: #007bff;
-          border-color: #007bff;
-        }
-
-        .visibility-toggle input:checked + .checkmark::after {
-          content: '✓';
-          position: absolute;
-          top: -2px;
-          left: 2px;
-          color: white;
-          font-size: 12px;
-          font-weight: bold;
-        }
-
-        .remove-btn {
-          width: 18px;
-          height: 18px;
-          background: #dc3545;
-          color: white;
-          border: none;
-          border-radius: 50%;
-          cursor: pointer;
-          font-size: 12px;
-          line-height: 1;
-          padding: 0;
-        }
-
-        .remove-btn:hover {
-          background: #c82333;
-        }
-
-        .sentence-text {
-          flex: 1;
-          font-size: 14px;
-          line-height: 1.4;
-          margin-bottom: 4px;
-        }
-
-        .sentence-coords {
-          font-size: 12px;
-          color: #666;
-          font-family: monospace;
         }
       `}</style>
     </div>
