@@ -6,7 +6,7 @@ import D3ScatterPlot from './D3ScatterPlot';
 
 const EmbeddingVisualizer = () => {
   const [sentences, setSentences] = useState([]);
-  const [inputText, setInputText] = useState(''); // Changed to handle multiple sentences
+  const [inputSentences, setInputSentences] = useState(['']); // Array of input sentences
   const [isLoading, setIsLoading] = useState(false);
   const [visibleSentences, setVisibleSentences] = useState(new Set());
   const [error, setError] = useState('');
@@ -68,22 +68,19 @@ const EmbeddingVisualizer = () => {
 
   // Function to process and add multiple sentences
   const processSentences = useCallback(async () => {
-    if (!inputText.trim()) return;
-    
-    // Parse input text into individual sentences
-    const inputSentences = inputText
-      .split('\n')
+    // Filter out empty sentences
+    const validSentences = inputSentences
       .map(s => s.trim())
       .filter(s => s.length > 0);
     
-    if (inputSentences.length === 0) return;
+    if (validSentences.length === 0) return;
     
     setIsLoading(true);
     setError('');
     
     try {
       // Send all sentences as batch to backend using existing endpoint
-      const embeddingResults = await generateBatchEmbeddings(inputSentences);
+      const embeddingResults = await generateBatchEmbeddings(validSentences);
       
       // Create sentence objects with unique IDs
       const newSentenceObjs = embeddingResults.map((result, index) => ({
@@ -100,14 +97,32 @@ const EmbeddingVisualizer = () => {
         newSentenceObjs.forEach(s => newSet.add(s.id));
         return newSet;
       });
-      setInputText('');
+      setInputSentences(['']); // Reset to single empty input
       
     } catch (err) {
       setError(`Failed to generate embeddings: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
-  }, [inputText]);
+  }, [inputSentences]);
+
+  // Functions to manage input sentences
+  const addInputField = useCallback(() => {
+    setInputSentences(prev => [...prev, '']);
+  }, []);
+
+  const removeInputField = useCallback((index) => {
+    if (inputSentences.length > 1) {
+      setInputSentences(prev => prev.filter((_, i) => i !== index));
+    }
+  }, [inputSentences.length]);
+
+  const updateInputSentence = useCallback((index, value) => {
+    setInputSentences(prev => prev.map((sentence, i) => i === index ? value : sentence));
+  }, []);
+
+  // Check if there are any non-empty sentences to process
+  const hasValidInput = inputSentences.some(s => s.trim().length > 0);
 
 
 
@@ -160,7 +175,7 @@ const EmbeddingVisualizer = () => {
     <div className="embedding-visualizer">
       <div className="header">
         <h1>Embedding Visualizer</h1>
-        <p>Add multiple sentences (one per line) to see how they cluster in 2D embedding space</p>
+        <p>Add multiple sentences using the input fields below to see how they cluster in 2D embedding space</p>
       </div>
 
       {error && (
@@ -171,17 +186,40 @@ const EmbeddingVisualizer = () => {
 
       <div className="input-section">
         <div className="sentence-input">
-          <textarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder="Enter sentences to visualize (one per line)...&#10;Example:&#10;I love programming&#10;Machine learning is fascinating&#10;The weather is nice today"
-            disabled={isLoading}
-            rows={4}
-          />
+          <div className="input-fields">
+            {inputSentences.map((sentence, index) => (
+              <div key={index} className="input-field-row">
+                <input
+                  type="text"
+                  value={sentence}
+                  onChange={(e) => updateInputSentence(index, e.target.value)}
+                  placeholder={`Enter sentence ${index + 1}...`}
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeInputField(index)}
+                  disabled={inputSentences.length === 1 || isLoading}
+                  className="remove-input-btn"
+                  title="Remove this sentence"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addInputField}
+              disabled={isLoading}
+              className="add-input-btn"
+            >
+              + Add Another Sentence
+            </button>
+          </div>
           <div className="button-group">
             <button 
               onClick={processSentences} 
-              disabled={isLoading || !inputText.trim()}
+              disabled={isLoading || !hasValidInput}
               className="primary-btn"
             >
               {isLoading ? 'Processing...' : 'Process Sentences'}
@@ -340,15 +378,20 @@ const EmbeddingVisualizer = () => {
           align-items: flex-start;
         }
 
-        .button-group {
+        .input-fields {
+          flex: 1;
           display: flex;
           flex-direction: column;
-          gap: 8px;
-          flex-shrink: 0;
-          min-width: 160px;
+          gap: 12px;
         }
 
-        .sentence-input textarea {
+        .input-field-row {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
+
+        .input-field-row input {
           flex: 1;
           padding: 12px 16px;
           border: 1px solid #e2e8f0;
@@ -357,33 +400,16 @@ const EmbeddingVisualizer = () => {
           background: #fafbff;
           color: #1e293b;
           transition: all 0.3s ease;
-          resize: vertical;
-          min-height: 120px;
           font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          line-height: 1.5;
           box-sizing: border-box;
         }
 
-        .sentence-input textarea::placeholder {
+        .input-field-row input::placeholder {
           color: #94a3b8;
-          line-height: 1.5;
           transition: color 0.3s ease;
         }
 
-        .sentence-input textarea:not(:focus)::placeholder {
-          animation: placeholderPulse 3s ease-in-out infinite;
-        }
-
-        @keyframes placeholderPulse {
-          0%, 100% {
-            opacity: 0.6;
-          }
-          50% {
-            opacity: 0.9;
-          }
-        }
-
-        .sentence-input textarea:focus {
+        .input-field-row input:focus {
           outline: none;
           border-color: #6366f1;
           box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
@@ -392,27 +418,70 @@ const EmbeddingVisualizer = () => {
           transform: scale(1.01);
         }
 
-        .sentence-input input {
-          flex: 1;
-          padding: 12px 16px;
+        .remove-input-btn {
+          width: 32px;
+          height: 32px;
+          background: #f1f5f9;
+          color: #64748b;
           border: 1px solid #e2e8f0;
-          border-radius: 8px;
+          border-radius: 6px;
+          cursor: pointer;
           font-size: 14px;
-          background: #fafbff;
-          color: #1e293b;
-          transition: all 0.2s;
+          line-height: 1;
+          padding: 0;
+          transition: all 0.3s ease;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
-        .sentence-input input::placeholder {
-          color: #94a3b8;
+        .remove-input-btn:hover:not(:disabled) {
+          background: #fef2f2;
+          color: #dc2626;
+          border-color: #fecaca;
+          transform: scale(1.1);
         }
 
-        .sentence-input input:focus {
-          outline: none;
+        .remove-input-btn:disabled {
+          background: #f8fafc;
+          color: #cbd5e1;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        .add-input-btn {
+          padding: 8px 12px;
+          background: #f8fafc;
+          color: #6366f1;
+          border: 1px dashed #cbd5e1;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 500;
+          transition: all 0.3s ease;
+          margin-top: 4px;
+        }
+
+        .add-input-btn:hover:not(:disabled) {
+          background: #f1f5f9;
           border-color: #6366f1;
-          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-          background: white;
-          color: #0f172a;
+          color: #5856eb;
+          transform: translateY(-1px);
+        }
+
+        .add-input-btn:disabled {
+          background: #f8fafc;
+          color: #cbd5e1;
+          cursor: not-allowed;
+        }
+
+        .button-group {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          flex-shrink: 0;
+          min-width: 160px;
         }
 
         .primary-btn {
@@ -781,16 +850,34 @@ const EmbeddingVisualizer = () => {
             margin-bottom: 16px;
           }
 
-          .button-group {
-            gap: 12px;
-            align-items: stretch;
+          .input-fields {
             width: 100%;
           }
 
-          .sentence-input textarea {
+          .input-field-row {
+            gap: 12px;
+          }
+
+          .input-field-row input {
             font-size: 14px;
             padding: 14px 16px;
-            min-height: 100px;
+          }
+
+          .remove-input-btn {
+            width: 36px;
+            height: 36px;
+            font-size: 16px;
+          }
+
+          .add-input-btn {
+            padding: 12px 16px;
+            font-size: 14px;
+            margin-top: 8px;
+          }
+
+          .button-group {
+            gap: 12px;
+            align-items: stretch;
             width: 100%;
           }
 
@@ -860,24 +947,27 @@ const EmbeddingVisualizer = () => {
             margin-bottom: 20px;
           }
 
-          .sentence-input input {
-            padding: 10px 14px;
-            font-size: 16px; /* Prevent zoom on iOS */
-            color: #1e293b;
-          }
-
-          .sentence-input textarea {
+          .input-field-row input {
             padding: 16px 20px;
             font-size: 16px; /* Prevent zoom on iOS */
             color: #1e293b;
-            min-height: 140px;
-            border-radius: 8px;
-            width: 100%;
-            box-sizing: border-box;
           }
 
-          .sentence-input input:focus, .sentence-input textarea:focus {
+          .input-field-row input:focus {
             color: #0f172a;
+          }
+
+          .remove-input-btn {
+            width: 44px;
+            height: 44px;
+            font-size: 18px;
+          }
+
+          .add-input-btn {
+            padding: 16px 20px;
+            font-size: 16px;
+            margin-top: 12px;
+            min-height: 48px;
           }
 
           .primary-btn {
@@ -955,13 +1045,22 @@ const EmbeddingVisualizer = () => {
             margin-bottom: 16px;
           }
 
-          .sentence-input textarea {
+          .input-field-row input {
             padding: 14px 16px;
             font-size: 16px;
-            min-height: 120px;
-            border-radius: 6px;
-            width: 100%;
-            box-sizing: border-box;
+          }
+
+          .remove-input-btn {
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+          }
+
+          .add-input-btn {
+            padding: 12px 16px;
+            font-size: 15px;
+            margin-top: 10px;
+            min-height: 44px;
           }
 
           .primary-btn {
