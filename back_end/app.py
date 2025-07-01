@@ -17,5 +17,11 @@ def deleteContents():
     delete_contents()
     return {"message": "Contents deleted"}
 
+@app.get("/getExistingSentences")
+def getExistingSentences():
+    with open('sentences.txt', 'r') as file:
+        sentences = file.read().splitlines()
+        return {"sentences": sentences}
+    
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True) 
