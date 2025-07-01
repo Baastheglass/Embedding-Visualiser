@@ -25,25 +25,58 @@ const EmbeddingVisualizer = () => {
     "Cats are adorable pets"
   ];
 
-  // Mock function to generate embeddings (replace with actual API call)
+  // Function to generate embeddings using the real backend API
   const generateEmbedding = async (text) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Generate mock 2D embeddings based on text characteristics
-    // In reality, this would be a call to your FastAPI backend
-    const textLength = text.length;
-    const wordCount = text.split(' ').length;
-    const hasAI = text.toLowerCase().includes('ai') || 
-                  text.toLowerCase().includes('machine') || 
-                  text.toLowerCase().includes('learning') ||
-                  text.toLowerCase().includes('programming') ||
-                  text.toLowerCase().includes('computer');
-    
-    const x = (textLength * 0.1) + (Math.random() - 0.5) * 2 + (hasAI ? 3 : -3);
-    const y = (wordCount * 0.5) + (Math.random() - 0.5) * 2 + (hasAI ? 2 : -2);
-    
-    return { x, y };
+    try {
+      const response = await axios.post('http://localhost:8000/getEmbeddings', {
+        text: text
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      console.log('Backend response:', response.data);
+      
+      // The backend returns all embeddings and sentences
+      // We need to find the coordinates for the current text
+      const { embeddings, sentences } = response.data;
+      
+      // Find the index of the current text in the sentences array
+      const textIndex = sentences.findIndex(sentence => sentence === text);
+      
+      if (textIndex !== -1 && embeddings[textIndex]) {
+        return {
+          x: embeddings[textIndex][0],
+          y: embeddings[textIndex][1]
+        };
+      } else {
+        throw new Error('Could not find embedding for the provided text');
+      }
+      
+    } catch (error) {
+      console.error('API Error:', error);
+      
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        const statusCode = error.response.status;
+        const errorMessage = error.response.data?.detail || error.response.data?.message || 'Unknown error';
+        
+        if (statusCode === 400) {
+          throw new Error(errorMessage);
+        } else if (statusCode === 500) {
+          throw new Error(`Server error: ${errorMessage}`);
+        } else {
+          throw new Error(`HTTP ${statusCode}: ${errorMessage}`);
+        }
+      } else if (error.request) {
+        // The request was made but no response was received
+        throw new Error('Cannot connect to the backend server. Make sure it\'s running on http://localhost:8000');
+      } else {
+        // Something happened in setting up the request
+        throw new Error(`Request error: ${error.message}`);
+      }
+    }
   };
 
   // Function to add a new sentence
@@ -66,7 +99,7 @@ const EmbeddingVisualizer = () => {
       setVisibleSentences(prev => new Set([...prev, newSentenceObj.id]));
       setNewSentence('');
     } catch (err) {
-      setError('Failed to generate embedding. Please try again.');
+      setError(`Failed to generate embedding: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -79,14 +112,28 @@ const EmbeddingVisualizer = () => {
     
     try {
       const newSentences = [];
+      
+      // Add sentences one by one to get real embeddings from backend
       for (const sentence of sampleSentences) {
-        const embedding = await generateEmbedding(sentence);
-        newSentences.push({
-          id: Date.now() + Math.random(),
-          text: sentence,
-          embedding,
-          visible: true
-        });
+        try {
+          const embedding = await generateEmbedding(sentence);
+          newSentences.push({
+            id: Date.now() + Math.random(),
+            text: sentence,
+            embedding,
+            visible: true
+          });
+          
+          // Small delay between requests to avoid overwhelming the API
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (err) {
+          console.warn(`Failed to get embedding for: "${sentence}". Error: ${err.message}`);
+          // Continue with other sentences even if one fails
+        }
+      }
+      
+      if (newSentences.length === 0) {
+        throw new Error('Failed to generate embeddings for any sample sentences');
       }
       
       setSentences(prev => [...prev, ...newSentences]);
@@ -95,8 +142,13 @@ const EmbeddingVisualizer = () => {
         newSentences.forEach(s => newSet.add(s.id));
         return newSet;
       });
+      
+      if (newSentences.length < sampleSentences.length) {
+        setError(`Successfully added ${newSentences.length} out of ${sampleSentences.length} sample sentences`);
+      }
+      
     } catch (err) {
-      setError('Failed to generate embeddings. Please try again.');
+      setError(`Failed to generate embeddings: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -115,21 +167,54 @@ const EmbeddingVisualizer = () => {
     });
   }, []);
 
-  // Function to remove a sentence
-  const removeSentence = useCallback((id) => {
-    setSentences(prev => prev.filter(s => s.id !== id));
-    setVisibleSentences(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(id);
-      return newSet;
-    });
+  // Function to clear all sentences
+  const clearAllSentences = useCallback(async () => {
+    try {
+      // Clear data from backend
+      await axios.post('http://localhost:8000/deleteContents');
+      
+      // Clear local state
+      setSentences([]);
+      setVisibleSentences(new Set());
+      setError('');
+    } catch (err) {
+      console.error('Failed to clear backend data:', err);
+      // Still clear local state even if backend fails
+      setSentences([]);
+      setVisibleSentences(new Set());
+      setError('Cleared local data, but failed to clear backend data');
+    }
   }, []);
 
-  // Function to clear all sentences
-  const clearAllSentences = useCallback(() => {
-    setSentences([]);
-    setVisibleSentences(new Set());
-  }, []);
+  
+  // Function to remove a sentence (simplified approach)
+  const removeSentence = useCallback(async (id) => {
+    try {
+      // Get the sentence text that we're removing
+      const sentenceToRemove = sentences.find(s => s.id === id);
+      if (!sentenceToRemove) return;
+      
+      // Remove from local state first
+      const updatedSentences = sentences.filter(s => s.id !== id);
+      setSentences(updatedSentences);
+      setVisibleSentences(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+      
+      // If no sentences left, just clear the backend
+      if (updatedSentences.length === 0) {
+        await axios.post('http://localhost:8000/deleteContents');
+        return;
+      }
+      
+      
+    } catch (err) {
+      console.error('Failed to remove sentence from backend:', err);
+      setError('Failed to sync with backend');
+    }
+  }, [sentences]);
 
   // Update plot data when sentences or visibility changes
   const visibleSentenceData = sentences.filter(s => visibleSentences.has(s.id));
