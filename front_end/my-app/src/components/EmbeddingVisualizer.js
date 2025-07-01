@@ -302,7 +302,12 @@ const EmbeddingVisualizer = () => {
           border-radius: 8px;
           font-size: 14px;
           background: #fafbff;
+          color: #1e293b;
           transition: all 0.2s;
+        }
+
+        .sentence-input input::placeholder {
+          color: #94a3b8;
         }
 
         .sentence-input input:focus {
@@ -310,6 +315,7 @@ const EmbeddingVisualizer = () => {
           border-color: #6366f1;
           box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
           background: white;
+          color: #0f172a;
         }
 
         .primary-btn {
@@ -637,6 +643,11 @@ const EmbeddingVisualizer = () => {
           .sentence-input input {
             padding: 10px 14px;
             font-size: 16px; /* Prevent zoom on iOS */
+            color: #1e293b;
+          }
+
+          .sentence-input input:focus {
+            color: #0f172a;
           }
 
           .primary-btn {
