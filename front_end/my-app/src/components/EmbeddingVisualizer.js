@@ -11,19 +11,7 @@ const EmbeddingVisualizer = () => {
   const [visibleSentences, setVisibleSentences] = useState(new Set());
   const [error, setError] = useState('');
 
-  // Sample sentences for demo purposes
-  const sampleSentences = [
-    "I love programming in Python",
-    "JavaScript is a versatile language",
-    "Machine learning is fascinating",
-    "Deep learning models are powerful",
-    "Natural language processing helps computers understand text",
-    "The weather is beautiful today",
-    "I enjoy reading books",
-    "Artificial intelligence will change the world",
-    "Data science involves statistics and programming",
-    "Cats are adorable pets"
-  ];
+
 
   // Function to generate embeddings for multiple sentences using existing endpoint
   const generateBatchEmbeddings = async (sentencesArray) => {
@@ -121,35 +109,7 @@ const EmbeddingVisualizer = () => {
     }
   }, [inputText]);
 
-  // Function to add sample sentences as batch
-  const addSampleSentences = useCallback(async () => {
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      // Send all sample sentences as batch using existing endpoint
-      const embeddingResults = await generateBatchEmbeddings(sampleSentences);
-      
-      const newSentenceObjs = embeddingResults.map((result, index) => ({
-        id: Date.now() + index + Math.random(),
-        text: result.text,
-        embedding: result.embedding,
-        visible: true
-      }));
-      
-      setSentences(prev => [...prev, ...newSentenceObjs]);
-      setVisibleSentences(prev => {
-        const newSet = new Set(prev);
-        newSentenceObjs.forEach(s => newSet.add(s.id));
-        return newSet;
-      });
-      
-    } catch (err) {
-      setError(`Failed to generate embeddings: ${err.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+
 
   // Function to toggle sentence visibility
   const toggleSentenceVisibility = useCallback((id) => {
@@ -218,30 +178,22 @@ const EmbeddingVisualizer = () => {
             disabled={isLoading}
             rows={4}
           />
-          <button 
-            onClick={processSentences} 
-            disabled={isLoading || !inputText.trim()}
-            className="primary-btn"
-          >
-            {isLoading ? 'Processing...' : 'Process Sentences'}
-          </button>
-        </div>
-        
-        <div className="action-buttons">
-          <button 
-            onClick={addSampleSentences} 
-            disabled={isLoading}
-            className="secondary-btn"
-          >
-            Add Samples
-          </button>
-          <button 
-            onClick={clearAllSentences} 
-            disabled={sentences.length === 0}
-            className="clear-btn"
-          >
-            Clear All
-          </button>
+          <div className="button-group">
+            <button 
+              onClick={processSentences} 
+              disabled={isLoading || !inputText.trim()}
+              className="primary-btn"
+            >
+              {isLoading ? 'Processing...' : 'Process Sentences'}
+            </button>
+            <button 
+              onClick={clearAllSentences} 
+              disabled={sentences.length === 0}
+              className="clear-btn"
+            >
+              Clear All
+            </button>
+          </div>
         </div>
       </div>
 
@@ -353,8 +305,15 @@ const EmbeddingVisualizer = () => {
         .sentence-input {
           display: flex;
           gap: 12px;
-          margin-bottom: 20px;
+          margin-bottom: 16px;
           align-items: flex-start;
+        }
+
+        .button-group {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          flex-shrink: 0;
         }
 
         .sentence-input textarea {
@@ -436,28 +395,7 @@ const EmbeddingVisualizer = () => {
           box-shadow: none;
         }
 
-        .action-buttons {
-          display: flex;
-          gap: 8px;
-          margin-top: 4px;
-        }
 
-        .secondary-btn {
-          padding: 8px 16px;
-          background: #f8fafc;
-          color: #475569;
-          border: 1px solid #e2e8f0;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 13px;
-          font-weight: 500;
-          transition: all 0.2s;
-        }
-
-        .secondary-btn:hover:not(:disabled) {
-          background: #f1f5f9;
-          border-color: #cbd5e1;
-        }
 
         .clear-btn {
           padding: 8px 16px;
@@ -476,7 +414,7 @@ const EmbeddingVisualizer = () => {
           color: #475569;
         }
 
-        .secondary-btn:disabled, .clear-btn:disabled {
+        .clear-btn:disabled {
           background: #f8fafc;
           color: #cbd5e1;
           cursor: not-allowed;
@@ -683,7 +621,12 @@ const EmbeddingVisualizer = () => {
           .sentence-input {
             flex-direction: column;
             gap: 16px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
+          }
+
+          .button-group {
+            gap: 12px;
+            align-items: stretch;
           }
 
           .sentence-input textarea {
@@ -698,13 +641,7 @@ const EmbeddingVisualizer = () => {
             text-align: center;
           }
 
-          .action-buttons {
-            flex-direction: column;
-            gap: 12px;
-            margin-top: 8px;
-          }
-
-          .secondary-btn, .clear-btn {
+          .clear-btn {
             width: 100%;
             text-align: center;
           }
@@ -760,7 +697,7 @@ const EmbeddingVisualizer = () => {
 
           .sentence-input {
             gap: 20px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
           }
 
           .sentence-input input {
@@ -788,18 +725,13 @@ const EmbeddingVisualizer = () => {
             font-size: 16px;
             width: 100%;
             min-height: 48px; /* Better touch target */
-            margin-bottom: 4px;
           }
 
-          .action-buttons {
-            gap: 16px;
-            margin-top: 12px;
-          }
-
-          .secondary-btn, .clear-btn {
-            padding: 14px 18px;
+          .clear-btn {
+            padding: 14px 24px;
             font-size: 14px;
             min-height: 48px;
+            width: 100%;
           }
 
           .main-content {
@@ -858,7 +790,7 @@ const EmbeddingVisualizer = () => {
           }
 
           .sentence-input {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
           }
 
           .sentence-input textarea {
@@ -874,18 +806,14 @@ const EmbeddingVisualizer = () => {
             padding: 14px 16px;
             font-size: 15px;
             min-height: 44px;
-            margin-bottom: 4px;
+            width: 100%;
           }
 
-          .action-buttons {
-            gap: 12px;
-            margin-top: 8px;
-          }
-
-          .secondary-btn, .clear-btn {
-            padding: 12px 16px;
+          .clear-btn {
+            padding: 12px 20px;
             font-size: 13px;
             min-height: 44px;
+            width: 100%;
           }
 
           .main-content {
