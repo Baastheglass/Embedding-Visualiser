@@ -193,7 +193,7 @@ const EmbeddingVisualizer = () => {
                   type="text"
                   value={sentence}
                   onChange={(e) => updateInputSentence(index, e.target.value)}
-                  placeholder={`Enter sentence ${index + 1}...`}
+                  placeholder="Enter text"
                   disabled={isLoading}
                 />
                 <button
