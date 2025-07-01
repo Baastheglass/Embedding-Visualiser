@@ -784,6 +784,7 @@ const EmbeddingVisualizer = () => {
           .button-group {
             gap: 12px;
             align-items: stretch;
+            width: 100%;
           }
 
           .sentence-input textarea {
@@ -796,11 +797,13 @@ const EmbeddingVisualizer = () => {
           .primary-btn {
             width: 100%;
             text-align: center;
+            min-width: unset;
           }
 
           .clear-btn {
             width: 100%;
             text-align: center;
+            min-width: unset;
           }
 
           .plot-container {
@@ -882,6 +885,7 @@ const EmbeddingVisualizer = () => {
             font-size: 16px;
             width: 100%;
             min-height: 48px; /* Better touch target */
+            min-width: unset;
           }
 
           .clear-btn {
@@ -889,6 +893,7 @@ const EmbeddingVisualizer = () => {
             font-size: 14px;
             min-height: 48px;
             width: 100%;
+            min-width: unset;
           }
 
           .main-content {
@@ -964,6 +969,7 @@ const EmbeddingVisualizer = () => {
             font-size: 15px;
             min-height: 44px;
             width: 100%;
+            min-width: unset;
           }
 
           .clear-btn {
@@ -971,6 +977,7 @@ const EmbeddingVisualizer = () => {
             font-size: 13px;
             min-height: 44px;
             width: 100%;
+            min-width: unset;
           }
 
           .main-content {
