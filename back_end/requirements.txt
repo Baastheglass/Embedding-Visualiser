@@ -3,3 +3,4 @@ python-dotenv
 umap-learn
 fastapi
 uvicorn
+scikit-learn
