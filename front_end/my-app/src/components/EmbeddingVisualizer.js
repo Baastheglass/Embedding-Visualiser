@@ -266,6 +266,18 @@ const EmbeddingVisualizer = () => {
         .header {
           text-align: center;
           margin-bottom: 32px;
+          animation: fadeInDown 0.6s ease;
+        }
+
+        @keyframes fadeInDown {
+          from {
+            opacity: 0;
+            transform: translateY(-30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         .header h1 {
@@ -291,6 +303,18 @@ const EmbeddingVisualizer = () => {
           text-align: center;
           border: 1px solid #fecaca;
           font-size: 14px;
+          animation: slideInDown 0.4s ease;
+        }
+
+        @keyframes slideInDown {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         .input-section {
@@ -300,6 +324,13 @@ const EmbeddingVisualizer = () => {
           margin-bottom: 28px;
           border: 1px solid #e2e8f0;
           box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+          transition: all 0.3s ease;
+          animation: fadeInUp 0.6s ease 0.2s both;
+        }
+
+        .input-section:hover {
+          box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1), 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+          transform: translateY(-1px);
         }
 
         .sentence-input {
@@ -314,7 +345,7 @@ const EmbeddingVisualizer = () => {
           flex-direction: column;
           gap: 8px;
           flex-shrink: 0;
-          width: 100%;
+          min-width: 160px;
         }
 
         .sentence-input textarea {
@@ -325,7 +356,7 @@ const EmbeddingVisualizer = () => {
           font-size: 14px;
           background: #fafbff;
           color: #1e293b;
-          transition: all 0.2s;
+          transition: all 0.3s ease;
           resize: vertical;
           min-height: 120px;
           font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -336,6 +367,20 @@ const EmbeddingVisualizer = () => {
         .sentence-input textarea::placeholder {
           color: #94a3b8;
           line-height: 1.5;
+          transition: color 0.3s ease;
+        }
+
+        .sentence-input textarea:not(:focus)::placeholder {
+          animation: placeholderPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes placeholderPulse {
+          0%, 100% {
+            opacity: 0.6;
+          }
+          50% {
+            opacity: 0.9;
+          }
         }
 
         .sentence-input textarea:focus {
@@ -344,6 +389,7 @@ const EmbeddingVisualizer = () => {
           box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
           background: white;
           color: #0f172a;
+          transform: scale(1.01);
         }
 
         .sentence-input input {
@@ -378,16 +424,46 @@ const EmbeddingVisualizer = () => {
           cursor: pointer;
           font-size: 14px;
           font-weight: 500;
-          transition: all 0.2s;
+          transition: all 0.3s ease;
           white-space: nowrap;
           height: fit-content;
           min-width: 140px;
           box-sizing: border-box;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .primary-btn::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+          transition: left 0.5s ease;
+        }
+
+        .primary-btn:hover::before {
+          left: 100%;
         }
 
         .primary-btn:hover:not(:disabled) {
           background: #5856eb;
-          transform: translateY(-1px);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+          background-image: linear-gradient(
+            45deg,
+            transparent 30%,
+            rgba(255, 255, 255, 0.2) 50%,
+            transparent 70%
+          );
+          background-size: 200px 100%;
+          animation: shimmer 2s infinite;
+        }
+
+        .primary-btn:active:not(:disabled) {
+          transform: translateY(0px);
           box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
 
@@ -396,6 +472,11 @@ const EmbeddingVisualizer = () => {
           cursor: not-allowed;
           transform: none;
           box-shadow: none;
+        }
+
+        @keyframes shimmer {
+          0% { background-position: -200px 0; }
+          100% { background-position: calc(200px + 100%) 0; }
         }
 
         .clear-btn {
@@ -407,14 +488,24 @@ const EmbeddingVisualizer = () => {
           cursor: pointer;
           font-size: 13px;
           font-weight: 500;
-          transition: all 0.2s;
+          transition: all 0.3s ease;
           min-width: 140px;
           box-sizing: border-box;
+          position: relative;
+          overflow: hidden;
         }
 
         .clear-btn:hover:not(:disabled) {
           background: #f1f5f9;
           color: #475569;
+          border-color: #cbd5e1;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .clear-btn:active:not(:disabled) {
+          transform: translateY(0px);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .clear-btn:disabled {
@@ -427,6 +518,7 @@ const EmbeddingVisualizer = () => {
           display: grid;
           grid-template-columns: 1fr 320px;
           gap: 24px;
+          animation: fadeInUp 0.6s ease;
         }
 
         @media (max-width: 1024px) {
@@ -441,6 +533,12 @@ const EmbeddingVisualizer = () => {
           border: 1px solid #e2e8f0;
           overflow: hidden;
           box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+          transition: all 0.3s ease;
+        }
+
+        .plot-container:hover {
+          box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1), 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+          transform: translateY(-1px);
         }
 
         .empty-plot {
@@ -452,12 +550,32 @@ const EmbeddingVisualizer = () => {
           color: #64748b;
           font-size: 16px;
           background: #fafbff;
+          animation: fadeIn 0.6s ease;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
         }
 
         .empty-icon {
           font-size: 48px;
           margin-bottom: 16px;
           opacity: 0.5;
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.05);
+          }
         }
 
         .sentence-list {
@@ -467,6 +585,12 @@ const EmbeddingVisualizer = () => {
           padding: 20px;
           box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
           height: fit-content;
+          transition: all 0.3s ease;
+        }
+
+        .sentence-list:hover {
+          box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1), 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+          transform: translateY(-1px);
         }
 
         .sentence-list h3 {
@@ -483,6 +607,13 @@ const EmbeddingVisualizer = () => {
           color: #64748b;
           font-weight: 400;
           font-size: 14px;
+          transition: all 0.3s ease;
+          display: inline-block;
+        }
+
+        .count:hover {
+          color: #6366f1;
+          transform: scale(1.1);
         }
 
         .sentence-items {
@@ -516,12 +647,27 @@ const EmbeddingVisualizer = () => {
           border-radius: 8px;
           margin-bottom: 8px;
           background: #fafbff;
-          transition: all 0.2s;
+          transition: all 0.3s ease;
+          opacity: 0;
+          animation: fadeInUp 0.4s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         .sentence-item:hover {
           border-color: #e2e8f0;
           background: white;
+          transform: translateX(4px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
         .sentence-controls {
@@ -550,12 +696,18 @@ const EmbeddingVisualizer = () => {
           border: 2px solid #e2e8f0;
           border-radius: 4px;
           position: relative;
-          transition: all 0.2s;
+          transition: all 0.3s ease;
+        }
+
+        .checkmark:hover {
+          border-color: #6366f1;
+          transform: scale(1.1);
         }
 
         .visibility-toggle input:checked + .checkmark {
           background: #6366f1;
           border-color: #6366f1;
+          transform: scale(1.1);
         }
 
         .visibility-toggle input:checked + .checkmark::after {
@@ -579,12 +731,14 @@ const EmbeddingVisualizer = () => {
           font-size: 10px;
           line-height: 1;
           padding: 0;
-          transition: all 0.2s;
+          transition: all 0.3s ease;
         }
 
         .remove-btn:hover {
           background: #fef2f2;
           color: #dc2626;
+          transform: scale(1.2) rotate(90deg);
+          box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
         }
 
         .sentence-content {
