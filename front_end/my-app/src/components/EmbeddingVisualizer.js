@@ -367,7 +367,7 @@ const EmbeddingVisualizer = () => {
           color: #1e293b;
           transition: all 0.2s;
           resize: vertical;
-          min-height: 100px;
+          min-height: 120px;
           font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           line-height: 1.5;
         }
@@ -680,8 +680,8 @@ const EmbeddingVisualizer = () => {
 
           .sentence-input textarea {
             font-size: 14px;
-            padding: 12px 16px;
-            min-height: 80px;
+            padding: 14px 16px;
+            min-height: 100px;
           }
 
           .primary-btn {
@@ -742,6 +742,10 @@ const EmbeddingVisualizer = () => {
             padding: 16px;
           }
 
+          .sentence-input {
+            gap: 16px;
+          }
+
           .sentence-input input {
             padding: 10px 14px;
             font-size: 16px; /* Prevent zoom on iOS */
@@ -749,10 +753,11 @@ const EmbeddingVisualizer = () => {
           }
 
           .sentence-input textarea {
-            padding: 10px 14px;
+            padding: 12px 16px;
             font-size: 16px; /* Prevent zoom on iOS */
             color: #1e293b;
-            min-height: 80px;
+            min-height: 120px;
+            border-radius: 8px;
           }
 
           .sentence-input input:focus, .sentence-input textarea:focus {
@@ -760,14 +765,16 @@ const EmbeddingVisualizer = () => {
           }
 
           .primary-btn {
-            padding: 10px 16px;
+            padding: 12px 16px;
             font-size: 14px;
             width: 100%;
+            min-height: 44px; /* Better touch target */
           }
 
           .secondary-btn, .clear-btn {
-            padding: 8px 14px;
+            padding: 10px 14px;
             font-size: 13px;
+            min-height: 40px;
           }
 
           .empty-plot {
@@ -798,6 +805,35 @@ const EmbeddingVisualizer = () => {
 
           .sentence-coords {
             font-size: 10px;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .embedding-visualizer {
+            padding: 8px;
+          }
+
+          .input-section {
+            padding: 12px;
+          }
+
+          .sentence-input textarea {
+            padding: 10px 12px;
+            font-size: 16px;
+            min-height: 100px;
+            border-radius: 6px;
+          }
+
+          .primary-btn {
+            padding: 10px 14px;
+            font-size: 13px;
+            min-height: 40px;
+          }
+
+          .secondary-btn, .clear-btn {
+            padding: 8px 12px;
+            font-size: 12px;
+            min-height: 36px;
           }
         }
       `}</style>
