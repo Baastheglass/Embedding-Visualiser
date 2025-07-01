@@ -370,6 +370,7 @@ const EmbeddingVisualizer = () => {
           min-height: 120px;
           font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
           line-height: 1.5;
+          box-sizing: border-box;
         }
 
         .sentence-input textarea::placeholder {
@@ -689,6 +690,7 @@ const EmbeddingVisualizer = () => {
             font-size: 14px;
             padding: 14px 16px;
             min-height: 100px;
+            width: 100%;
           }
 
           .primary-btn {
@@ -773,6 +775,8 @@ const EmbeddingVisualizer = () => {
             color: #1e293b;
             min-height: 140px;
             border-radius: 8px;
+            width: 100%;
+            box-sizing: border-box;
           }
 
           .sentence-input input:focus, .sentence-input textarea:focus {
@@ -862,6 +866,8 @@ const EmbeddingVisualizer = () => {
             font-size: 16px;
             min-height: 120px;
             border-radius: 6px;
+            width: 100%;
+            box-sizing: border-box;
           }
 
           .primary-btn {
