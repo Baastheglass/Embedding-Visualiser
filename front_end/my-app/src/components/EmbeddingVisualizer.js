@@ -68,35 +68,38 @@ const EmbeddingVisualizer = () => {
 
   // Function to process and add multiple sentences
   const processSentences = useCallback(async () => {
-    // Filter out empty sentences
-    const validSentences = inputSentences
+    // Filter out empty sentences from input
+    const validNewSentences = inputSentences
       .map(s => s.trim())
       .filter(s => s.length > 0);
     
-    if (validSentences.length === 0) return;
+    if (validNewSentences.length === 0) return;
     
     setIsLoading(true);
     setError('');
     
     try {
-      // Send all sentences as batch to backend using existing endpoint
-      const embeddingResults = await generateBatchEmbeddings(validSentences);
+      // Combine existing sentences with new ones
+      const existingSentenceTexts = sentences.map(s => s.text);
+      const allSentences = [...existingSentenceTexts, ...validNewSentences];
       
-      // Create sentence objects with unique IDs
-      const newSentenceObjs = embeddingResults.map((result, index) => ({
-        id: Date.now() + index,
+      // Remove duplicates while preserving order
+      const uniqueSentences = [...new Set(allSentences)];
+      
+      // Send ALL sentences (existing + new) to backend for fresh embeddings
+      const embeddingResults = await generateBatchEmbeddings(uniqueSentences);
+      
+      // Create new sentence objects with fresh IDs for ALL sentences
+      const allSentenceObjs = embeddingResults.map((result, index) => ({
+        id: index + 1, // Fresh sequential IDs
         text: result.text,
         embedding: result.embedding,
         visible: true
       }));
       
-      // Update state with all new sentences
-      setSentences(prev => [...prev, ...newSentenceObjs]);
-      setVisibleSentences(prev => {
-        const newSet = new Set(prev);
-        newSentenceObjs.forEach(s => newSet.add(s.id));
-        return newSet;
-      });
+      // Replace entire sentence list with new results
+      setSentences(allSentenceObjs);
+      setVisibleSentences(new Set(allSentenceObjs.map(s => s.id)));
       setInputSentences(['']); // Reset to single empty input
       
     } catch (err) {
@@ -104,7 +107,7 @@ const EmbeddingVisualizer = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [inputSentences]);
+  }, [inputSentences, sentences]); // Add sentences to dependency array
 
   // Functions to manage input sentences
   const addInputField = useCallback(() => {
@@ -139,15 +142,45 @@ const EmbeddingVisualizer = () => {
     });
   }, []);
 
-  // Function to remove a sentence
-  const removeSentence = useCallback((id) => {
-    setSentences(prev => prev.filter(s => s.id !== id));
-    setVisibleSentences(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(id);
-      return newSet;
-    });
-  }, []);
+  // Function to remove a sentence and regenerate embeddings for remaining sentences
+  const removeSentence = useCallback(async (sentenceId) => {
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      // Get remaining sentences (exclude the one being removed)
+      const remainingSentences = sentences.filter(s => s.id !== sentenceId);
+      
+      if (remainingSentences.length === 0) {
+        // If no sentences left, just clear everything
+        setSentences([]);
+        setVisibleSentences(new Set());
+      } else if (remainingSentences.length === 1) {
+        // If only 1 sentence left, show error (need at least 2 for visualization)
+        setError('Need at least 2 sentences for visualization');
+        setSentences([]);
+        setVisibleSentences(new Set());
+      } else {
+        // Regenerate embeddings for remaining sentences
+        const sentenceTexts = remainingSentences.map(s => s.text);
+        const embeddingResults = await generateBatchEmbeddings(sentenceTexts);
+        
+        const updatedSentences = embeddingResults.map((result, index) => ({
+          id: index + 1, // Fresh sequential IDs
+          text: result.text,
+          embedding: result.embedding,
+          visible: true
+        }));
+        
+        setSentences(updatedSentences);
+        setVisibleSentences(new Set(updatedSentences.map(s => s.id)));
+      }
+    } catch (error) {
+      setError('Failed to remove sentence. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [sentences]);
 
   // Function to clear all sentences
   const clearAllSentences = useCallback(async () => {
@@ -266,6 +299,7 @@ const EmbeddingVisualizer = () => {
                     onClick={() => removeSentence(sentence.id)}
                     className="remove-btn"
                     title="Remove sentence"
+                    disabled={isLoading}
                   >
                     ×
                   </button>
@@ -796,11 +830,19 @@ const EmbeddingVisualizer = () => {
           transition: all 0.3s ease;
         }
 
-        .remove-btn:hover {
+        .remove-btn:hover:not(:disabled) {
           background: #fef2f2;
           color: #dc2626;
           transform: scale(1.2) rotate(90deg);
           box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+        }
+
+        .remove-btn:disabled {
+          background: #f8fafc;
+          color: #cbd5e1;
+          cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
         }
 
         .sentence-content {
