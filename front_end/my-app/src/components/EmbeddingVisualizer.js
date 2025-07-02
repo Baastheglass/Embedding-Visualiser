@@ -18,7 +18,7 @@ const EmbeddingVisualizer = () => {
     try {
       // Send all sentences as a single text string, separated by newlines
       
-      const response = await axios.post('http://localhost:8000/getEmbeddings', {
+      const response = await axios.post('https://visualiser-backend.axonbuild.com/getEmbeddings', {
         text: sentencesArray
       }, {
         headers: {
@@ -59,7 +59,7 @@ const EmbeddingVisualizer = () => {
           throw new Error(`HTTP ${statusCode}: ${errorMessage}`);
         }
       } else if (error.request) {
-        throw new Error('Cannot connect to the backend server. Make sure it\'s running on http://localhost:8000');
+        throw new Error('Cannot connect to the backend server. Make sure it\'s running on https://visualiser-backend.axonbuild.com/');
       } else {
         throw new Error(`Request error: ${error.message}`);
       }
@@ -152,19 +152,12 @@ const EmbeddingVisualizer = () => {
   // Function to clear all sentences
   const clearAllSentences = useCallback(async () => {
     try {
-      // Clear data from backend
-      await axios.post('http://localhost:8000/deleteContents');
-      
       // Clear local state
       setSentences([]);
       setVisibleSentences(new Set());
       setError('');
     } catch (err) {
-      console.error('Failed to clear backend data:', err);
-      // Still clear local state even if backend fails
-      setSentences([]);
-      setVisibleSentences(new Set());
-      setError('Cleared local data, but failed to clear backend data');
+      console.error('Failed to clear local data:', err);
     }
   }, []);
 
