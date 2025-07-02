@@ -38,10 +38,42 @@ const D3ScatterPlot = ({ data, width = 800, height = 500, onPointHover, onPointC
       .range([innerHeight, 0])
       .nice();
 
-    // Minimal color scheme: primary blue and light blue
-    const colorScale = d3.scaleLinear()
-      .domain([0, data.length - 1])
-      .range(['#6366f1', '#a5b4fc']); // Indigo gradient
+    // Diverse color palette for better point distinction
+    const colorPalette = [
+      '#e11d48', // Rose
+      '#0ea5e9', // Sky blue
+      '#22c55e', // Green
+      '#f59e0b', // Amber
+      '#8b5cf6', // Violet
+      '#ef4444', // Red
+      '#06b6d4', // Cyan
+      '#84cc16', // Lime
+      '#f97316', // Orange
+      '#a855f7', // Purple
+      '#ec4899', // Pink
+      '#10b981', // Emerald
+      '#3b82f6', // Blue
+      '#eab308', // Yellow
+      '#6366f1', // Indigo
+      '#14b8a6', // Teal
+      '#f43f5e', // Rose red
+      '#8b5cf6', // Blue violet
+      '#059669', // Emerald green
+      '#dc2626'  // Red
+    ];
+
+    // Create color scale that cycles through the palette
+    const colorScale = d3.scaleOrdinal()
+      .domain(d3.range(data.length))
+      .range(colorPalette);
+
+    // Alternative: If you want a continuous rainbow-like effect, use this instead:
+    // const colorScale = d3.scaleSequential(d3.interpolateRainbow)
+    //   .domain([0, data.length - 1]);
+
+    // Or for a more scientific look, use viridis:
+    // const colorScale = d3.scaleSequential(d3.interpolateViridis)
+    //   .domain([0, data.length - 1]);
 
     // Create main group
     const g = svg.append('g')
