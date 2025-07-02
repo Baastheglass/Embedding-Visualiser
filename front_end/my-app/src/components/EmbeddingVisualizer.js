@@ -10,6 +10,7 @@ const EmbeddingVisualizer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [visibleSentences, setVisibleSentences] = useState(new Set());
   const [error, setError] = useState('');
+  const [showAnnotations, setShowAnnotations] = useState(false); // Toggle for point annotations
 
 
 
@@ -128,6 +129,11 @@ const EmbeddingVisualizer = () => {
   const hasValidInput = inputSentences.some(s => s.trim().length > 0);
 
 
+
+  // Toggle annotation visibility
+  const toggleAnnotations = useCallback(() => {
+    setShowAnnotations(prev => !prev);
+  }, []);
 
   // Function to toggle sentence visibility
   const toggleSentenceVisibility = useCallback((id) => {
@@ -264,15 +270,27 @@ const EmbeddingVisualizer = () => {
       <div className="main-content">
         <div className="plot-container">
           {visibleSentenceData.length > 0 ? (
-            <D3ScatterPlot
-              data={visibleSentenceData}
-              width={typeof window !== 'undefined' && window.innerWidth <= 480 ? 350 : 
-                     typeof window !== 'undefined' && window.innerWidth <= 768 ? 600 : 800}
-              height={typeof window !== 'undefined' && window.innerWidth <= 480 ? 300 : 
-                      typeof window !== 'undefined' && window.innerWidth <= 768 ? 400 : 500}
-              onPointHover={(point) => console.log('Hovered:', point.text)}
-              onPointClick={(point) => console.log('Clicked:', point.text)}
-            />
+            <>
+              <div className="plot-controls">
+                <button
+                  onClick={toggleAnnotations}
+                  className={`annotation-toggle ${showAnnotations ? 'active' : ''}`}
+                  title={showAnnotations ? 'Hide point labels' : 'Show point labels'}
+                >
+                  {showAnnotations ? '🏷️ Hide Labels' : '🏷️ Show Labels'}
+                </button>
+              </div>
+              <D3ScatterPlot
+                data={visibleSentenceData}
+                width={typeof window !== 'undefined' && window.innerWidth <= 480 ? 350 : 
+                       typeof window !== 'undefined' && window.innerWidth <= 768 ? 600 : 800}
+                height={typeof window !== 'undefined' && window.innerWidth <= 480 ? 300 : 
+                        typeof window !== 'undefined' && window.innerWidth <= 768 ? 400 : 500}
+                onPointHover={(point) => console.log('Hovered:', point.text)}
+                onPointClick={(point) => console.log('Clicked:', point.text)}
+                showAnnotations={showAnnotations}
+              />
+            </>
           ) : (
             <div className="empty-plot">
               <div className="empty-icon">📊</div>
@@ -630,6 +648,55 @@ const EmbeddingVisualizer = () => {
           overflow: hidden;
           box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
           transition: all 0.3s ease;
+          position: relative;
+        }
+
+        .plot-controls {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          z-index: 10;
+          display: flex;
+          gap: 8px;
+        }
+
+        .annotation-toggle {
+          padding: 8px 12px;
+          background: rgba(255, 255, 255, 0.95);
+          color: #64748b;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 500;
+          transition: all 0.3s ease;
+          backdrop-filter: blur(4px);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .annotation-toggle:hover {
+          background: rgba(248, 250, 252, 0.98);
+          color: #475569;
+          border-color: #cbd5e1;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .annotation-toggle.active {
+          background: rgba(99, 102, 241, 0.1);
+          color: #6366f1;
+          border-color: #6366f1;
+          box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+        }
+
+        .annotation-toggle.active:hover {
+          background: rgba(99, 102, 241, 0.15);
+          color: #5856eb;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
 
         .plot-container:hover {
@@ -932,6 +999,16 @@ const EmbeddingVisualizer = () => {
             margin-bottom: 20px;
           }
 
+          .plot-controls {
+            top: 8px;
+            right: 8px;
+          }
+
+          .annotation-toggle {
+            padding: 6px 10px;
+            font-size: 11px;
+          }
+
           .empty-plot {
             height: 350px;
             font-size: 14px;
@@ -1121,6 +1198,17 @@ const EmbeddingVisualizer = () => {
 
           .plot-container {
             margin-bottom: 4px;
+          }
+
+          .plot-controls {
+            top: 6px;
+            right: 6px;
+          }
+
+          .annotation-toggle {
+            padding: 6px 8px;
+            font-size: 10px;
+            gap: 2px;
           }
         }
       `}</style>

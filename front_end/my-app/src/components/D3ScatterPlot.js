@@ -3,7 +3,7 @@
 import React, { useRef, useEffect } from 'react';
 import * as d3 from 'd3';
 
-const D3ScatterPlot = ({ data, width = 800, height = 500, onPointHover, onPointClick }) => {
+const D3ScatterPlot = ({ data, width = 800, height = 500, onPointHover, onPointClick, showAnnotations = false }) => {
   const svgRef = useRef();
 
   useEffect(() => {
@@ -185,7 +185,7 @@ const D3ScatterPlot = ({ data, width = 800, height = 500, onPointHover, onPointC
       .ease(d3.easeBackOut.overshoot(1.2))
       .attr('r', 6);
 
-    // Add subtle text labels that appear on hover
+    // Add persistent text labels (controlled by showAnnotations prop)
     const labels = g.selectAll('.label')
       .data(data)
       .enter().append('text')
@@ -195,29 +195,65 @@ const D3ScatterPlot = ({ data, width = 800, height = 500, onPointHover, onPointC
       .attr('text-anchor', 'middle')
       .style('font-size', '11px')
       .style('font-family', 'system-ui, -apple-system, sans-serif')
-      .style('fill', '#6b7280')
-      .style('opacity', 0)
+      .style('fill', '#374151')
+      .style('font-weight', '500')
+      .style('opacity', showAnnotations ? 0.9 : 0)
       .style('pointer-events', 'none')
-      .text(d => d.text.length > 15 ? d.text.substring(0, 15) + '...' : d.text);
+      .style('text-shadow', '0 1px 2px rgba(255, 255, 255, 0.8)')
+      .text(d => d.text.length > 20 ? d.text.substring(0, 20) + '...' : d.text);
 
-    // Show/hide labels on hover
-    points.on('mouseover.label', function(event, d) {
-      labels.filter(label => label.id === d.id)
-        .transition()
-        .duration(150)
-        .style('opacity', 0.8);
-    }).on('mouseout.label', function() {
-      labels.transition()
-        .duration(200)
-        .style('opacity', 0);
-    });
+    // Add background rectangles for labels when annotations are shown
+    if (showAnnotations) {
+      const labelBgs = g.selectAll('.label-bg')
+        .data(data)
+        .enter().insert('rect', '.label')
+        .attr('class', 'label-bg')
+        .attr('x', d => {
+          const textLength = (d.text.length > 20 ? d.text.substring(0, 20) + '...' : d.text).length;
+          return xScale(d.embedding.x) - (textLength * 3.2);
+        })
+        .attr('y', d => yScale(d.embedding.y) - 24)
+        .attr('width', d => {
+          const textLength = (d.text.length > 20 ? d.text.substring(0, 20) + '...' : d.text).length;
+          return textLength * 6.4;
+        })
+        .attr('height', 16)
+        .attr('rx', 4)
+        .style('fill', 'rgba(255, 255, 255, 0.9)')
+        .style('stroke', 'rgba(226, 232, 240, 0.8)')
+        .style('stroke-width', 1)
+        .style('opacity', 0.9)
+        .style('pointer-events', 'none');
+    }
+
+    // Update labels when showAnnotations changes
+    labels.transition()
+      .duration(300)
+      .style('opacity', showAnnotations ? 0.9 : 0);
+
+    // Update hover behavior - only show temporary labels when annotations are off
+    if (!showAnnotations) {
+      points.on('mouseover.label', function(event, d) {
+        labels.filter(label => label.id === d.id)
+          .transition()
+          .duration(150)
+          .style('opacity', 0.8);
+      }).on('mouseout.label', function() {
+        labels.transition()
+          .duration(200)
+          .style('opacity', 0);
+      });
+    } else {
+      // Remove hover label behavior when annotations are always shown
+      points.on('mouseover.label', null).on('mouseout.label', null);
+    }
 
     // Cleanup function
     return () => {
       d3.select('body').selectAll('.d3-tooltip').remove();
     };
 
-  }, [data, width, height, onPointHover, onPointClick]);
+  }, [data, width, height, onPointHover, onPointClick, showAnnotations]);
 
   return (
     <div className="d3-plot-container">
